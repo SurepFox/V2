@@ -4,11 +4,11 @@ import time
 import subprocess
 import glob
 import ctypes
-from colorama import init, Fore
 from art import text2art
-init()
-print(Fore.GREEN + text2art('neoneko', font='banner3') + Fore.LIGHTBLUE_EX)
-kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)    
+import tkinter as tk
+from tkinter import messagebox
+
+kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 kernel32.GetCurrentProcess()
 mutexes = [
     "ROBLOX_singletonMutex",
@@ -16,7 +16,7 @@ mutexes = [
     "ROBLOX_SingletonEvent",
     "RobloxMultiplayerPipe",
     "RobloxGameExplorer"
-]   
+]
 for mutex_name in mutexes:
     mutex = kernel32.CreateMutexW(None, False, mutex_name)
     if mutex == 0:
@@ -95,20 +95,38 @@ def launch_roblox_with_place_id(place_id, cookie=None):
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     subprocess.Popen(args, startupinfo=startupinfo, creationflags=subprocess.CREATE_NEW_CONSOLE)
 cookies = read_cookies()
-while True:
-    for i, cookie_data in enumerate(cookies, 1):
-        print(f"{i}. {cookie_data['username']}")
-    print("")
-    print("1. Launch all accounts")
-    print("2. Launch a specific account")
-    choice = input()
-    if choice == "1":
-        print("\nLaunching all accounts...")
-        for cookie_data in cookies:
-            print(f"\nLaunching an Account: {cookie_data['username']}")
-            launch_roblox_with_place_id(place_id, cookie_data['cookie'])
-    elif choice == "2":
-        acc_num = int(input("Id Account: "))
-        cookie_data = cookies[acc_num - 1]
-        print(f"\nLaunching an Account: {cookie_data['username']}")
+
+root = tk.Tk()
+root.title("neoneko Launcher")
+
+title_label = tk.Label(root, text=text2art('neoneko', font='banner3'), font=("Courier", 10), fg="green", justify=tk.LEFT)
+title_label.pack(pady=5)
+
+listbox = tk.Listbox(root, width=40, height=10)
+listbox.pack(padx=10, pady=10)
+
+for cookie_data in cookies:
+    listbox.insert(tk.END, cookie_data['username'])
+
+def launch_selected():
+    selection = listbox.curselection()
+    if not selection:
+        messagebox.showinfo("Select Account", "Please select an account.")
+        return
+    cookie_data = cookies[selection[0]]
+    launch_roblox_with_place_id(place_id, cookie_data['cookie'])
+
+def launch_all():
+    for cookie_data in cookies:
         launch_roblox_with_place_id(place_id, cookie_data['cookie'])
+
+button_frame = tk.Frame(root)
+button_frame.pack(pady=10)
+
+launch_sel_btn = tk.Button(button_frame, text="Launch Selected", command=launch_selected)
+launch_sel_btn.pack(side=tk.LEFT, padx=5)
+
+launch_all_btn = tk.Button(button_frame, text="Launch All", command=launch_all)
+launch_all_btn.pack(side=tk.LEFT, padx=5)
+
+root.mainloop()
